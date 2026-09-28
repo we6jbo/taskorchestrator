@@ -1,7 +1,73 @@
+# Qt Creator
+.qtcreator/
+*.user
+*.user.*
+
+# Build directories
 build/
 build-*/
 cmake-build-*/
+
+# CMake generated files
 CMakeFiles/
 CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Ninja
+.ninja_deps
+.ninja_log
+build.ninja
+rules.ninja
+
+# Compiled objects / libraries
 *.o
-*.user
+*.obj
+*.a
+*.so
+*.so.*
+*.dll
+*.dylib
+
+# Executables and generated binaries
+taskorchestrator
+
+# Qt generated files
+*_autogen/
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+
+# Temporary / editor files
+*~
+*.swp
+*.swo
+*.tmp
+*.bak
+
+# Logs
+*.log
+
+# Archives / packaged builds
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.xz
+*.7z
+
+# Snap build artifacts
+*.snap
+prime/
+stage/
+parts/
+
+# Flatpak build artifacts
+.flatpak-builder/
+build-dir/
+repo/
+
+# OS / desktop junk
+.DS_Store
+Thumbs.db

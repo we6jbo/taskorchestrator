@@ -21,6 +21,7 @@ void MainWindow::refreshTasks()
     const QDateTime now = QDateTime::currentDateTime();
     ui->availabilityLabel->setText("Availability today: " + Orchestrator::availabilityTextForDate(now.date()) +
                                    (Orchestrator::isHolidayOverride(now.date()) ? " (holiday override)" : ""));
+    ui->eventsLabel->setText("Event files: " + orchestrator.eventsDirectory());
     ui->provenanceLabel->setText("Project provenance: " + QString::fromLatin1(Orchestrator::ProvenanceId));
 
     const auto list = orchestrator.tasks();
@@ -29,9 +30,10 @@ void MainWindow::refreshTasks()
     for (const auto &t : list) {
         const QString reason = orchestrator.eligibilityReason(t, now);
         const QDateTime next = orchestrator.nextEligibleTime(t, now);
-        QStringList vals = {t.id, t.name, QString::number(t.priority), t.cadence, reason,
-                            next.isValid() ? next.toString("yyyy-MM-dd h:mm AP") : "No slot found"};
-        for (int col = 0; col < vals.size(); ++col) ui->taskTable->setItem(row, col, new QTableWidgetItem(vals[col]));
+        QStringList vals = {t.id, t.name, QString::number(t.priority), QString::number(t.durationMinutes),
+                            t.cadence, reason, next.isValid() ? next.toString("yyyy-MM-dd h:mm AP") : "No slot found"};
+        for (int col = 0; col < vals.size(); ++col)
+            ui->taskTable->setItem(row, col, new QTableWidgetItem(vals[col]));
         ++row;
     }
     ui->taskTable->resizeColumnsToContents();
@@ -46,7 +48,9 @@ void MainWindow::runSelected()
     }
     const QString id = ui->taskTable->item(row, 0)->text();
     QString error;
-    if (!orchestrator.runTask(id, &error)) QMessageBox::warning(this, "Task Orchestrator", error);
-    else QMessageBox::information(this, "Task Orchestrator", "Started task: " + id);
+    if (!orchestrator.runTaskInTerminal(id, &error))
+        QMessageBox::warning(this, "Task Orchestrator", error);
+    else
+        QMessageBox::information(this, "Task Orchestrator", "Opened task in terminal: " + id);
     refreshTasks();
 }

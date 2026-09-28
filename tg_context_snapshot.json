@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "generated_at": "2026-09-27T15:28:00-07:00",
+  "project_id": "taskorchestrator",
+  "reference": "taskorchestrator project provenance",
+  "codes": [
+    "AKA_TE324543"
+  ],
+  "records": [
+    {
+      "code": "AKA_TE324543",
+      "registry_matches": [
+        {
+          "person_no": 1,
+          "display_name": "Me",
+          "details": "",
+          "name_permanent": 1,
+          "code": "AKA_TE324543",
+          "kind": "AKA_TE",
+          "permanent": 1,
+          "aliases": [],
+          "provisional_facts": [],
+          "relationships": [
+            {
+              "child": "Me",
+              "parent": "Dudley McCabe",
+              "relation": "parent",
+              "confidence": 1.0,
+              "permanent": 1
+            },
+            {
+              "child": "Me",
+              "parent": "Mom",
+              "relation": "parent",
+              "confidence": 1.0,
+              "permanent": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "portable": true,
+  "note": "This snapshot lets the project retain its TG/AKA provenance without requiring the local T14 registry."
+}

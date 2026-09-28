@@ -12,9 +12,11 @@ static void printTask(const TaskRecord &t, Orchestrator &o, QTextStream &out)
 {
     const auto next = o.nextEligibleTime(t);
     out << t.id << " | " << t.name << " | priority=" << t.priority
+        << " | duration=" << t.durationMinutes
         << " | cadence=" << t.cadence
         << " | " << o.eligibilityReason(t)
-        << " | next=" << (next.isValid() ? next.toString("yyyy-MM-dd HH:mm") : "none") << '\n';
+        << " | next=" << (next.isValid() ? next.toString("yyyy-MM-dd HH:mm") : "none")
+        << " | event=" << o.eventFilePath(t.id) << '\n';
 }
 
 int main(int argc, char *argv[])
@@ -23,20 +25,18 @@ int main(int argc, char *argv[])
     const bool guiMode = (firstArg == "gui" || firstArg.startsWith('-'));
 
     std::unique_ptr<QCoreApplication> app;
-    if (guiMode)
-        app = std::make_unique<QApplication>(argc, argv);
-    else
-        app = std::make_unique<QCoreApplication>(argc, argv);
+    if (guiMode) app = std::make_unique<QApplication>(argc, argv);
+    else app = std::make_unique<QCoreApplication>(argc, argv);
 
     QCoreApplication::setOrganizationName("we6jbo");
     QCoreApplication::setApplicationName("taskorchestrator");
-    QCoreApplication::setApplicationVersion("0.2");
+    QCoreApplication::setApplicationVersion("0.3");
 
     QCommandLineParser parser;
     parser.setApplicationDescription("Availability-aware task scheduler and program dispatcher.");
     parser.addHelpOption();
     parser.addVersionOption();
-    parser.addPositionalArgument("command", "gui, register, list, eligible, next, run, remove, availability");
+    parser.addPositionalArgument("command", "gui, register, list, eligible, next, run, run-terminal, remove, availability, events");
     parser.addOption(QCommandLineOption(QStringList() << "id", "Stable task id", "id"));
     parser.addOption(QCommandLineOption(QStringList() << "name", "Display name", "name"));
     parser.addOption(QCommandLineOption(QStringList() << "exec", "Executable path/name", "executable"));
@@ -59,14 +59,10 @@ int main(int argc, char *argv[])
 
     if (cmd == "gui") {
         auto *guiApp = qobject_cast<QApplication *>(app.get());
-        if (!guiApp) {
-            err << "GUI mode must be launched as: taskorchestrator gui\n";
-            return 2;
-        }
-        MainWindow w;
-        w.show();
-        return guiApp->exec();
+        if (!guiApp) { err << "GUI mode must be launched as: taskorchestrator gui\n"; return 2; }
+        MainWindow w; w.show(); return guiApp->exec();
     }
+
     if (cmd == "register") {
         TaskRecord t;
         t.id = parser.value("id");
@@ -88,46 +84,47 @@ int main(int argc, char *argv[])
         const QDateTime next = o.nextEligibleTime(t);
         out << "Registered " << t.id << ". Next eligible: "
             << (next.isValid() ? next.toString("yyyy-MM-dd h:mm AP") : "none") << '\n';
+        out << "Event file: " << o.eventFilePath(t.id) << '\n';
         return 0;
     }
-    if (cmd == "list") {
-        for (const auto &t : o.tasks()) printTask(t, o, out);
-        return 0;
-    }
-    if (cmd == "eligible") {
-        for (const auto &t : o.eligibleTasks()) printTask(t, o, out);
-        return 0;
-    }
+
+    if (cmd == "list") { for (const auto &t : o.tasks()) printTask(t, o, out); return 0; }
+    if (cmd == "eligible") { for (const auto &t : o.eligibleTasks()) printTask(t, o, out); return 0; }
+
     if (cmd == "next") {
         const QString id = parser.value("id");
-        for (const auto &t : o.tasks()) {
-            if (t.id == id) {
-                const QDateTime next = o.nextEligibleTime(t);
-                out << (next.isValid() ? next.toString("yyyy-MM-dd h:mm AP") : "none") << '\n';
-                return 0;
-            }
+        for (const auto &t : o.tasks()) if (t.id == id) {
+            const QDateTime next = o.nextEligibleTime(t);
+            out << (next.isValid() ? next.toString("yyyy-MM-dd h:mm AP") : "none") << '\n';
+            return 0;
         }
-        err << "Task not found.\n";
-        return 2;
+        err << "Task not found.\n"; return 2;
     }
+
     if (cmd == "run") {
-        QString e;
-        if (!o.runTask(parser.value("id"), &e)) { err << e << '\n'; return 2; }
-        out << "Started.\n";
-        return 0;
+        QString e; if (!o.runTask(parser.value("id"), &e)) { err << e << '\n'; return 2; }
+        out << "Started.\n"; return 0;
     }
+
+    if (cmd == "run-terminal") {
+        QString e; if (!o.runTaskInTerminal(parser.value("id"), &e)) { err << e << '\n'; return 2; }
+        out << "Opened task in terminal.\n"; return 0;
+    }
+
     if (cmd == "remove") {
-        QString e;
-        if (!o.removeTask(parser.value("id"), &e)) { err << e << '\n'; return 2; }
-        out << "Removed.\n";
-        return 0;
+        QString e; if (!o.removeTask(parser.value("id"), &e)) { err << e << '\n'; return 2; }
+        out << "Removed task and event file.\n"; return 0;
     }
+
     if (cmd == "availability") {
         QDate d = parser.isSet("date") ? QDate::fromString(parser.value("date"), Qt::ISODate) : QDate::currentDate();
         out << d.toString(Qt::ISODate) << ": " << Orchestrator::availabilityTextForDate(d)
             << (Orchestrator::isHolidayOverride(d) ? " (holiday override)" : "") << '\n';
         return 0;
     }
+
+    if (cmd == "events") { out << o.eventsDirectory() << '\n'; return 0; }
+
     err << "Unknown command: " << cmd << '\n';
     return 2;
 }
